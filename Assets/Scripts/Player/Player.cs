@@ -7,8 +7,17 @@ public class Player : MonoBehaviour
     [Header("References")]
     private Rigidbody2D rgdBdy2d;
 
-    [Header("Speed Controlls")]
+    [Header("Player Basics")]
+    [SerializeField] private int life;
     [SerializeField] private float movementSpeed;
+    [SerializeField] private float dashTime;
+    private float initialMovementSpeed;
+    private float lockedYPosition;
+    private bool canDash;
+
+    [Header("Invicible Data")]
+    private float invicibilityTime = 1f;
+    private float invicibilityTimeCount;
 
     [Header("Jump Controlls")]
     [SerializeField] private float jumpForce;
@@ -19,59 +28,98 @@ public class Player : MonoBehaviour
     private float coyoteTimer = 0.1f;
     private float coyoteCount;
 
-
-    [Header("Inputs")]
-    private float movementInput;
+    [Header("Input Keys")]
+    private KeyCode KEY_RIGHT = KeyCode.D;
+    private KeyCode KEY_LEFT = KeyCode.A;
 
     #region Properties
     [HideInInspector]
     public bool isOnTheGround {get {return _isOnTheGround;} set {_isOnTheGround = value;}}
     [HideInInspector]
     //Player States
-    public bool isMoving, isJumping;
+    public bool isMoving, isJumping, isDashing, isHurting;
     [HideInInspector]
     public int movingDirection;
     #endregion
 
     void Start() {
         rgdBdy2d = GetComponent<Rigidbody2D>();
+        movingDirection = 1;
+        initialMovementSpeed = movementSpeed;
     }
 
     void Update() {
         GetInputs();
         CoyoteHandler();
-    }
 
-    void FixedUpdate() {
+        if(invicibilityTimeCount < invicibilityTime) invicibilityTimeCount += Time.deltaTime;
+
         MovePlayer();
     }
 
     void GetInputs() {
-        movementInput = Input.GetAxisRaw("Horizontal");
+        if(isDashing || isHurting) return;
 
+        if(canDash) {
+            if(Input.GetKeyDown(KEY_LEFT) || Input.GetKeyDown(KEY_RIGHT)) Dash((int) Input.GetAxisRaw("Horizontal"));  
+        }
         if(Input.GetKeyDown(KeyCode.Space) && canJump) Jump();
     }
 
     #region Movement
     void MovePlayer() {
-        transform.position = new Vector2(transform.position.x + movementInput * movementSpeed * Time.deltaTime, transform.position.y);
-        isMoving = movementInput != 0;
-        if(movementInput > 0) movingDirection = 1;
-        else if (movementInput < 0) movingDirection = -1;
+        transform.position = new Vector2(transform.position.x + movingDirection * movementSpeed * Time.deltaTime, isDashing ? lockedYPosition : transform.position.y);
+        isMoving = true;
     }
 
     void Jump() {
         rgdBdy2d.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
         isJumping = true;
     }
+
+    void Dash(int dir) {
+        movingDirection = dir;
+        isDashing = true;
+        canDash = false;
+        movementSpeed = movementSpeed * 2;
+        lockedYPosition = transform.position.y;
+        StartCoroutine(StopDash());
+    }
     #endregion
 
     #region Handlers
+    IEnumerator StopDash() {
+        yield return new WaitForSeconds(dashTime);
+        isDashing = false;
+        movementSpeed = initialMovementSpeed;
+    }
+
+    public void GetHurt(float knockForce) {
+        if(invicibilityTimeCount < invicibilityTime) return;
+
+        life--;
+        invicibilityTimeCount = 0;
+
+        isHurting = true;
+
+        rgdBdy2d.velocity = Vector3.zero;
+        rgdBdy2d.AddForce(new Vector2(knockForce * movingDirection * (-1f), knockForce), ForceMode2D.Impulse);
+
+        if(life <= 0) Die();
+    }
+
+    void Die() {
+
+    }
+
     void CoyoteHandler() {
+        if(isOnTheGround) canDash = true;
+
         if(isOnTheGround && !canJump) {
             canJump = true;
             coyoteCount = 0;
             isJumping = false;
+            isHurting = false;
             return;
         }
 

@@ -26,6 +26,7 @@ public class PlayerGFX : MonoBehaviour
 
     void SetAnimationIndex() {
         animationIndex = player switch {
+            {isDashing: true} => 3,
             {isJumping: true} => 2,
             {isMoving: true} => 1,
             _ => 0
@@ -39,7 +40,7 @@ public class PlayerGFX : MonoBehaviour
         else if(player.movingDirection == -1) GetComponent<SpriteRenderer>().flipX = true;
     }
 
-    void GetHurt() {
+    public void GetHurt() {
         playerAnimator.SetTrigger("Hurt");
     }
 }
