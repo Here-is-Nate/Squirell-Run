@@ -15,6 +15,10 @@ public class GroundChecker : MonoBehaviour
     }
 
     void Update() {
+        CheckGround();
+    }
+
+    void CheckGround() {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, colliderRadius, groundLayer);
 
         if(hit) player.isOnTheGround = true;

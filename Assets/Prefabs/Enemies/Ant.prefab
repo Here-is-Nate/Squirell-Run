@@ -51,7 +51,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 2
   m_Material: {fileID: 0}
   m_Interpolate: 0
   m_SleepingMode: 1
@@ -170,5 +170,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   life: 1
   movementSpeed: 3
+  moveType: 0
   knockForce: 0
   deathPrefab: {fileID: 4874365625183714874, guid: 2e2e6939aa3fc584da3eb128416ed541, type: 3}

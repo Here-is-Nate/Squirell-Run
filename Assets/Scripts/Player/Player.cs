@@ -24,6 +24,10 @@ public class Player : MonoBehaviour
     private bool _isOnTheGround;
     private bool canJump = true;
 
+     [Header("Enemy Jump Data")]
+    private float enemyJumpTime = 0.2f;
+    private float enemyJumpTimeCount;
+
     [Header("Coyote Jump")]
     private float coyoteTimer = 0.1f;
     private float coyoteCount;
@@ -51,8 +55,9 @@ public class Player : MonoBehaviour
     void Update() {
         GetInputs();
         CoyoteHandler();
-
+        
         if(invicibilityTimeCount < invicibilityTime) invicibilityTimeCount += Time.deltaTime;
+        if(enemyJumpTimeCount < enemyJumpTime) enemyJumpTimeCount += Time.deltaTime;
 
         MovePlayer();
     }
@@ -75,6 +80,15 @@ public class Player : MonoBehaviour
     void Jump() {
         rgdBdy2d.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
         isJumping = true;
+    }
+
+    public void EnemyJump() {
+        if(enemyJumpTimeCount >= enemyJumpTime) {
+            rgdBdy2d.velocity = Vector3.zero;
+            rgdBdy2d.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
+            isJumping = true;
+            enemyJumpTimeCount = 0;
+        }
     }
 
     void Dash(int dir) {

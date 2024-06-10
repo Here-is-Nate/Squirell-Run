@@ -5,13 +5,20 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     [Header("Components")]
-    private Rigidbody2D rgdBdy2d;
+    protected Rigidbody2D rgdBdy2d;
 
     [Header("Enemy Basics")]
     [SerializeField] private int life;
-    [SerializeField] private float movementSpeed;
+    [SerializeField] protected float movementSpeed;
     private float initialMovementSpeed;
     private float resetSpeedTime = 0.2f;
+    protected enum EMoveType {
+        ONLY_LEFT,
+        ONLY_RIGHT,
+        CHASE_PLAYER
+    }
+    [SerializeField] protected EMoveType moveType;
+    private IMovementStrategy movementStrategy;
 
     [Header("Invicible Data")]
     private float invicibilityTime = 0.2f;
@@ -23,16 +30,26 @@ public class Enemy : MonoBehaviour
 
 
     void Start() {
-        rgdBdy2d = GetComponent<Rigidbody2D>();
-        initialMovementSpeed = movementSpeed;
+        SetComponents();
     }
 
     void Update() {
-        if(invicibilityTimeCount < invicibilityTime) invicibilityTimeCount += Time.deltaTime;
+        EnemyConstantsChecker();
     }
 
     void FixedUpdate() {
         MoveEnemy();
+    }
+
+    // Check some constants to enemy, like if it is invicible, or if collide in a death collider
+    protected void EnemyConstantsChecker() {
+        if(invicibilityTimeCount < invicibilityTime) invicibilityTimeCount += Time.deltaTime;
+    }
+
+    protected void SetComponents() {
+        SetMovementStrategy();
+        rgdBdy2d = GetComponent<Rigidbody2D>();
+        initialMovementSpeed = movementSpeed;
     }
 
     public void GetHurt(int knockDirection) {
@@ -46,8 +63,7 @@ public class Enemy : MonoBehaviour
         rgdBdy2d.AddForce(new Vector2(knockForce * knockDirection, 0f), ForceMode2D.Impulse);
 
         if(life <= 0) Die();
-
-        StartCoroutine(ResetSpeed());
+        else StartCoroutine(ResetSpeed());
     }
 
     IEnumerator ResetSpeed() {
@@ -59,9 +75,19 @@ public class Enemy : MonoBehaviour
         Instantiate(deathPrefab, transform.position, transform.rotation);
         Destroy(gameObject);
     }
-
+  
+    /// <summary>
+    /// The enemies by default move right to left
+    /// </summary>
     virtual public void MoveEnemy() {
-        transform.position = new Vector2(transform.position.x + movementSpeed * Time.deltaTime * (-1f), transform.position.y);
+        movementStrategy.Move(transform, movementSpeed);
     }
-    
+
+    void SetMovementStrategy() {
+        switch(moveType) {
+            case EMoveType.ONLY_RIGHT: movementStrategy = FindObjectOfType<MoveOnlyRight>().GetComponent<MoveOnlyRight>(); break;
+            case EMoveType.CHASE_PLAYER: movementStrategy = FindObjectOfType<MoveChasePlayer>().GetComponent<MoveChasePlayer>(); break;
+            default: movementStrategy = FindObjectOfType<MoveOnlyLeft>().GetComponent<MoveOnlyLeft>(); break;
+        }
+    }
 }
